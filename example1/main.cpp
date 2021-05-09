@@ -202,7 +202,7 @@ int main()
     // find vertexOffset and move vertexes
     auto programId = createGLProgram();
 
-    GLfloat offset = -1;
+    GLfloat offset = -3;
     GLfloat mult = 1;
     do
     {
@@ -213,24 +213,30 @@ int main()
 
         glUseProgram(programId);
 
-        draw(triangleBufferId, programId, offset);
+
+        for (int i= 0; i < 100; i++)
+            draw(triangleBufferId, programId,  offset  + i * 0.1f);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
 
         using namespace std::chrono_literals;
-        std::this_thread::sleep_for(20ms); //~48 frames / sec
+        std::this_thread::sleep_for(40ms); //~24 frames / sec
         offset += mult * 0.01;
 
-        if (offset > 1.f) {
-            offset = 1.f;
+        if (offset > 3.f) {
+            offset = 3.f;
             mult = -1.f;
         }
-        else if (offset < -1.f)
+        else if (offset < -3.f)
         {
-            offset = -1.f;
+            offset = -3.f;
             mult = 1.f;
         }
+
+        int width, height;
+        glfwGetWindowSize(window, &width, &height);
+        glViewport(0, 0, width, height);
 
     } // Проверяем нажатие клавиши Escape или закрытие окна
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);
