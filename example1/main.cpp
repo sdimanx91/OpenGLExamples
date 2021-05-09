@@ -14,6 +14,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
+#include <thread>
+#include <chrono>
+
 using namespace glm;
 
 
@@ -145,10 +148,10 @@ GLuint createTriangle()
     return vertexBuffer;
 }
 
-void draw(GLuint vertexBufferName, GLuint program)
+void draw(GLuint vertexBufferName, GLuint program, GLfloat offset)
 {
     GLint offsetLocation = glGetUniformLocation(program, "xOffset");
-    glUniform1f(offsetLocation, 0.25f);
+    glUniform1f(offsetLocation, offset);
 
     glEnableVertexAttribArray(0);
 
@@ -196,22 +199,39 @@ int main()
     // Включим режим отслеживания нажатия клавиш, для проверки ниже
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
-    glClearColor(1.f, 1.f, 1.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    auto triangleBufferId = createTriangle();
-
+    // find vertexOffset and move vertexes
     auto programId = createGLProgram();
 
-    // find vertexOffset and move vertexes
+    GLfloat offset = -1;
+    GLfloat mult = 1;
     do
     {
+        glClearColor(1.f, 1.f, 1.f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        auto triangleBufferId = createTriangle();
+
         glUseProgram(programId);
 
-        draw(triangleBufferId, programId);
+        draw(triangleBufferId, programId, offset);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(20ms); //~48 frames / sec
+        offset += mult * 0.01;
+
+        if (offset > 1.f) {
+            offset = 1.f;
+            mult = -1.f;
+        }
+        else if (offset < -1.f)
+        {
+            offset = -1.f;
+            mult = 1.f;
+        }
+
     } // Проверяем нажатие клавиши Escape или закрытие окна
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);
 
