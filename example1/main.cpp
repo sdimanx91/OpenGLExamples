@@ -10,8 +10,9 @@
 
 #include <GLFW/glfw3.h>
 
-// Включаем GLM
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
 
 using namespace glm;
 
@@ -58,15 +59,18 @@ GLuint compileShader(const std::string& source, GLenum shaderType)
 
 const char* vertexShader = "#version 330 core \n"
                            "layout(location = 0) in vec4 vertexPosition;"
+                           "out vec3 ourColor;"
                            "void main() {"
                            "    gl_Position = vertexPosition;"
                            "    gl_Position.w = 1.f;"
+                           "    ourColor = vec3(gl_Position.x, gl_Position.y, gl_Position.x * gl_Position.y);"
                            "}";
 
 const char* fragmentShader = "#version 330 core \n"
+                             "in vec3 ourColor;"
                              "out vec3 color;"
                              "void main() {"
-                             "    color = vec3(1.f, 0.f, 0.f);"
+                             "    color = ourColor;"
                              "}";
 
 GLuint createGLProgram()
@@ -114,7 +118,6 @@ GLuint createGLProgram()
     return programId;
 }
 
-// return triangle id
 GLuint createTriangle()
 {
     GLuint vertexArrayName;
@@ -168,9 +171,6 @@ int main()
     window = glfwCreateWindow(1024, 768, "Tutorial 01", NULL, NULL);
     if (window == NULL)
     {
-        fprintf(stderr,
-                "Невозможно открыть окно GLFW. Если у вас Intel GPU, то он не поддерживает версию "
-                "3.3. Попробуйте версию уроков для OpenGL 2.1.n");
         glfwTerminate();
         return -1;
     }
@@ -190,20 +190,17 @@ int main()
     auto programId = createGLProgram();
 
     glUseProgram(programId);
-    glClearColor(0.f, 0.f, 1.f, 1.f);
+    glClearColor(1.f, 1.f, 1.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     auto triangleBufferId = createTriangle();
 
     do
     {
-        // Пока что ничего не выводим. Это будет в уроке 2.
         draw(triangleBufferId);
 
-        // Сбрасываем буферы
         glfwSwapBuffers(window);
         glfwPollEvents();
-
     } // Проверяем нажатие клавиши Escape или закрытие окна
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);
 }
