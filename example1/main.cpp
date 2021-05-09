@@ -58,11 +58,13 @@ GLuint compileShader(const std::string& source, GLenum shaderType)
 }
 
 const char* vertexShader = "#version 330 core \n"
-                           "layout(location = 0) in vec4 vertexPosition;"
+                           "layout(location = 0) in vec4 vPos;"
+                           "uniform float xOffset;"
                            "out vec3 ourColor;"
                            "void main() {"
-                           "    gl_Position = vertexPosition;"
+                           "    gl_Position = vPos;"
                            "    gl_Position.w = 1.f;"
+                           "    gl_Position.x += xOffset;"
                            "    ourColor = vec3(gl_Position.x, gl_Position.y, gl_Position.x * gl_Position.y);"
                            "}";
 
@@ -77,17 +79,18 @@ GLuint createGLProgram()
 {
     const GLuint programId = glCreateProgram();
 
+    GLuint vertexShaderId;
     // vertexShader
     {
-        GLuint shaderId = compileShader(vertexShader, GL_VERTEX_SHADER);
-        glAttachShader(programId, shaderId);
+        vertexShaderId = compileShader(vertexShader, GL_VERTEX_SHADER);
+        glAttachShader(programId, vertexShaderId);
     }
 
-
+    GLuint fragmentShaderId;
     // fragmentShader
     {
-        GLuint shaderId = compileShader(fragmentShader, GL_FRAGMENT_SHADER);
-        glAttachShader(programId, shaderId);
+        fragmentShaderId = compileShader(fragmentShader, GL_FRAGMENT_SHADER);
+        glAttachShader(programId, fragmentShaderId);
     }
 
     glLinkProgram(programId);
@@ -115,6 +118,9 @@ GLuint createGLProgram()
         }
     }
 
+    glDeleteShader(vertexShaderId);
+    glDeleteShader(fragmentShaderId);
+
     return programId;
 }
 
@@ -139,8 +145,11 @@ GLuint createTriangle()
     return vertexBuffer;
 }
 
-void draw(GLuint vertexBufferName)
+void draw(GLuint vertexBufferName, GLuint program)
 {
+    GLint offsetLocation = glGetUniformLocation(program, "xOffset");
+    glUniform1f(offsetLocation, 0.25f);
+
     glEnableVertexAttribArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, vertexBufferName);
@@ -187,20 +196,24 @@ int main()
     // Включим режим отслеживания нажатия клавиш, для проверки ниже
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
-    auto programId = createGLProgram();
-
-    glUseProgram(programId);
     glClearColor(1.f, 1.f, 1.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     auto triangleBufferId = createTriangle();
 
+    auto programId = createGLProgram();
+
+    // find vertexOffset and move vertexes
     do
     {
-        draw(triangleBufferId);
+        glUseProgram(programId);
+
+        draw(triangleBufferId, programId);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     } // Проверяем нажатие клавиши Escape или закрытие окна
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);
+
+    glDeleteProgram(programId);
 }
